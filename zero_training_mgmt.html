@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZERO 研修管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Noto+Sans+JP:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1b2a; --navy-mid:#1b3050;
+  --teal:#1a7a6e; --teal-light:#2aab99;
+  --gold:#c9a84c; --gold-light:#e8c97a;
+  --cream:#f7f3ee; --warm-white:#fdfbf8;
+  --case-color:#1a6854; --case-bg:#eaf5f2;
+  --base-color:#1a4a7a; --base-bg:#eaf0f8;
+  --disc-color:#7a4a1a; --disc-bg:#f8f0e0;
+  --review-color:#5c2a6e; --review-bg:#f2eaf5;
+  --text-dark:#1a1a1a; --text-mid:#4a4a4a; --text-light:#888;
+  --success:#2aab6e; --border:rgba(0,0,0,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--text-dark);min-height:100vh;}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--navy);position:relative;overflow:hidden;}
+#loginScreen::before{content:'';position:absolute;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(26,122,110,.25) 0%,transparent 70%);}
+#loginScreen::after{content:'';position:absolute;bottom:-80px;left:80px;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.15) 0%,transparent 70%);}
+.login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:48px 44px;width:400px;position:relative;z-index:1;}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:5px;color:var(--gold-light);text-align:center;margin-bottom:8px;}
+.login-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:700;color:white;text-align:center;margin-bottom:30px;}
+.login-section-label{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.3);text-align:center;margin:14px 0 10px;}
+.login-btn{width:100%;padding:15px 20px;border-radius:10px;border:none;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;transition:all .2s;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.login-btn .btn-right{font-size:11px;font-weight:400;opacity:.7;}
+.login-btn.ehara{background:linear-gradient(135deg,var(--navy-mid),#2a4a70);color:white;border:1px solid rgba(255,255,255,.15);}
+.login-btn.mami{background:linear-gradient(135deg,var(--teal),#1da090);color:white;}
+.login-btn.trainee{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1);}
+.login-btn:hover{transform:translateY(-2px);opacity:.9;}
+
+/* APP */
+#app{display:none;min-height:100vh;flex-direction:column;}
+.topbar{background:var(--navy);color:white;display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-family:'Cormorant Garamond',serif;font-size:18px;letter-spacing:3px;color:var(--gold-light);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.role-badge{padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;}
+.role-badge.ehara{background:var(--gold);color:var(--navy);}
+.role-badge.mami{background:var(--teal);color:white;}
+.role-badge.trainee{background:rgba(255,255,255,.12);color:white;}
+.topbar-user{font-size:13px;color:rgba(255,255,255,.7);}
+.topbar-logout{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:5px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;}
+.topbar-logout:hover{background:rgba(255,255,255,.07);color:white;}
+
+/* TABS */
+.tabs{background:white;border-bottom:1px solid var(--border);display:flex;padding:0 28px;}
+.tab-btn{padding:14px 22px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text-light);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:700;}
+.tab-btn:hover:not(.active){color:var(--text-mid);}
+
+/* CONTENT */
+.content{flex:1;padding:28px;max-width:1100px;margin:0 auto;width:100%;}
+.panel{display:none;}.panel.active{display:block;}
+
+/* STATS */
+.overview-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1px solid var(--border);}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--navy);line-height:1;margin-bottom:4px;}
+.stat-label{font-size:12px;color:var(--text-light);}
+.stat-sub{font-size:11px;color:var(--teal);font-weight:700;margin-top:4px;}
+.progress-wrap{margin-bottom:24px;}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-light);margin-bottom:6px;}
+.progress-bar-bg{height:8px;background:var(--cream);border-radius:4px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-light));border-radius:4px;transition:width .6s ease;}
+.overview-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.info-card{background:white;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.05);border:1px solid var(--border);}
+.info-card-title{font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--cream);}
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--cream);gap:12px;}
+.info-row:last-child{border-bottom:none;}
+.info-key{font-size:12px;color:var(--text-light);min-width:80px;flex-shrink:0;}
+.info-val{font-size:13px;color:var(--text-dark);font-weight:500;text-align:right;}
+.issue-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+.issue-pill{font-size:11px;padding:4px 11px;border-radius:20px;font-weight:500;}
+.issue-pill.tech{background:#fdeaea;color:#c04040;}
+.issue-pill.skill{background:#fef3e0;color:#b07020;}
+.issue-pill.ops{background:var(--case-bg);color:var(--case-color);}
+
+/* SESSION CARDS */
+.session-grid{display:flex;flex-direction:column;gap:14px;}
+.session-card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05);border:1px solid var(--border);transition:box-shadow .2s;}
+.session-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.09);}
+.session-card-header{display:flex;align-items:stretch;cursor:pointer;}
+.session-num-bar{width:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 0;flex-shrink:0;}
+.snum{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:white;line-height:1;}
+.slabel{font-size:9px;color:rgba(255,255,255,.7);letter-spacing:1px;margin-top:2px;}
+.type-case  .session-num-bar{background:linear-gradient(160deg,#1a6854,#2aab99);}
+.type-base  .session-num-bar{background:linear-gradient(160deg,#1a3a6e,#2a6aaa);}
+.type-disc  .session-num-bar{background:linear-gradient(160deg,#6e4a1a,#b07a35);}
+.type-review .session-num-bar{background:linear-gradient(160deg,#4a1a6e,#8a3aaa);}
+.session-info{flex:1;padding:16px 20px;}
+.session-meta{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.session-date{font-size:12px;color:var(--text-light);}
+.session-type-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700;letter-spacing:.5px;}
+.type-case  .session-type-tag{background:var(--case-bg);color:var(--case-color);}
+.type-base  .session-type-tag{background:var(--base-bg);color:var(--base-color);}
+.type-disc  .session-type-tag{background:var(--disc-bg);color:var(--disc-color);}
+.type-review .session-type-tag{background:var(--review-bg);color:var(--review-color);}
+.session-title{font-family:'Noto Serif JP',serif;font-size:17px;font-weight:700;color:var(--navy);margin-bottom:7px;}
+.session-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.stag{font-size:11px;padding:2px 9px;border-radius:20px;background:var(--cream);color:var(--text-mid);}
+.session-right{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:16px 20px;gap:8px;flex-shrink:0;}
+.fb-status{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;}
+.fb-status.done{background:#e8f8ef;color:var(--success);}
+.fb-status.pending{background:#fef3ea;color:#c07030;}
+.fb-status.upcoming{background:var(--cream);color:var(--text-light);}
+.expand-icon{font-size:16px;color:var(--text-light);transition:transform .25s;}
+.session-card.open .expand-icon{transform:rotate(180deg);}
+
+/* SESSION DETAIL */
+.session-detail{display:none;border-top:1px solid var(--border);padding:24px;background:#fdfdfd;}
+.session-card.open .session-detail{display:block;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.detail-box{background:white;border-radius:10px;padding:18px;border:1px solid var(--border);}
+.detail-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.detail-box-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-light);}
+.detail-list{list-style:none;display:flex;flex-direction:column;gap:7px;}
+.detail-list li{font-size:13px;color:var(--text-mid);padding-left:14px;position:relative;line-height:1.5;}
+.detail-list li::before{content:'–';position:absolute;left:0;color:var(--text-light);}
+
+/* CONTENT EDIT */
+.btn-edit-content{background:none;border:1px solid var(--border);color:var(--text-light);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .2s;white-space:nowrap;}
+.btn-edit-content:hover{background:var(--cream);color:var(--teal);border-color:var(--teal);}
+.edit-area{display:flex;flex-direction:column;gap:7px;}
+.edit-item{display:flex;gap:6px;align-items:flex-start;}
+.edit-item textarea{flex:1;padding:8px 12px;border:1px solid rgba(0,0,0,.12);border-radius:7px;font-family:'Noto Sans JP',sans-serif;font-size:13px;color:var(--text-dark);background:var(--warm-white);resize:vertical;outline:none;min-height:42px;transition:border-color .2s;}
+.edit-item textarea:focus{border-color:var(--teal);}
+.btn-remove{background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:6px 4px;line-height:1;transition:color .2s;flex-shrink:0;}
+.btn-remove:hover{color:#e05a5a;}
+.btn-add{background:none;border:1px dashed rgba(0,0,0,.18);color:var(--text-light);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;width:100%;transition:all .2s;margin-top:4px;}
+.btn-add:hover{border-color:var(--teal);color:var(--teal);}
+.edit-actions{display:flex;gap:8px;margin-top:8px;justify-content:flex-end;}
+.btn-save-main{background:var(--teal);color:white;border:none;padding:9px 22px;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;}
+.btn-save-main:hover{background:var(--teal-light);}
+.btn-cancel-main{background:none;border:1px solid var(--border);color:var(--text-mid);padding:8px 18px;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:12px;cursor:pointer;transition:background .2s;}
+.btn-cancel-main:hover{background:var(--cream);}
+
+/* FB */
+.fb-section{background:white;border-radius:10px;padding:20px;border:1px solid var(--border);}
+.fb-section-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.fb-badge{font-size:10px;background:var(--teal);color:white;padding:2px 8px;border-radius:10px;}
+.fb-display{background:var(--case-bg);border-radius:8px;padding:16px;margin-bottom:12px;}
+.fb-display-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.fb-display-who{font-size:12px;font-weight:700;color:var(--case-color);}
+.fb-display-date{font-size:11px;color:var(--text-light);}
+.fb-field-label{font-size:11px;font-weight:700;color:var(--text-light);margin-bottom:4px;letter-spacing:.5px;}
+.fb-field-value{font-size:13px;color:var(--text-dark);line-height:1.65;margin-bottom:12px;white-space:pre-wrap;}
+.fb-field-value:last-child{margin-bottom:0;}
+.fb-form{display:flex;flex-direction:column;gap:13px;}
+.fb-form label{font-size:12px;font-weight:700;color:var(--text-mid);display:block;margin-bottom:5px;}
+.fb-form textarea{width:100%;padding:10px 14px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;color:var(--text-dark);background:var(--warm-white);resize:vertical;outline:none;min-height:80px;transition:border-color .2s;}
+.fb-form textarea:focus{border-color:var(--teal);}
+.fb-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:4px;}
+
+/* MISC */
+.section-title{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.section-title h2{font-family:'Noto Serif JP',serif;font-size:17px;font-weight:700;color:var(--navy);}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(13,27,42,.15),transparent);}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:20px;padding:14px 18px;background:white;border-radius:10px;border:1px solid var(--border);}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-mid);}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--navy);color:white;padding:14px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.2);opacity:0;transform:translateY(12px);transition:all .3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">ZERO TRAINING SYSTEM</div>
+    <div class="login-title">研修管理ポータル</div>
+    <div class="login-section-label">── 管理者 ──</div>
+    <div id="adminBtns">
+      <button class="login-btn ehara" onclick="selectAdmin('ehara')">
+        <span>⚙️ 江原健次</span>
+        <span class="btn-right">管理者 / 内容編集 / FB入力</span>
+      </button>
+      <button class="login-btn mami" onclick="selectAdmin('mami')">
+        <span>🎓 中田真実（まみ）</span>
+        <span class="btn-right">管理者 / 内容編集 / FB入力</span>
+      </button>
+    </div>
+    <div id="pwArea" style="display:none;margin-top:4px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;letter-spacing:1px;" id="pwLabel"></div>
+      <div style="position:relative;">
+        <input type="password" id="pwInput" placeholder="パスワードを入力"
+          style="width:100%;padding:13px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:white;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;letter-spacing:2px;"
+          onkeydown="if(event.key==='Enter')doAdminLogin()">
+      </div>
+      <div id="pwError" style="color:#e07070;font-size:12px;margin-top:6px;display:none;">パスワードが正しくありません</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="cancelAdmin()"
+          style="flex:1;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-family:'Noto Sans JP',sans-serif;font-size:13px;cursor:pointer;">
+          戻る
+        </button>
+        <button onclick="doAdminLogin()"
+          style="flex:2;padding:12px;border-radius:8px;border:none;background:var(--teal);color:white;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+          ログイン
+        </button>
+      </div>
+    </div>
+    <div class="login-section-label">── 受講者 ──</div>
+    <button class="login-btn trainee" onclick="login('trainee')">
+      <span>👤 受講者としてログイン</span>
+      <span class="btn-right">閲覧のみ</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">ZERO TRAINING</div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser"></span>
+      <span class="role-badge" id="roleBadge"></span>
+      <button class="topbar-logout" onclick="logout()">ログアウト</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event,'overview')">📊 概要</button>
+    <button class="tab-btn" onclick="switchTab(event,'schedule')">📅 研修スケジュール・FB</button>
+  </div>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="panel-overview" class="panel active">
+      <div class="overview-stats">
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">研修回数（契約）</div><div class="stat-sub">2026.06 〜 2027.05</div></div>
+        <div class="stat-card"><div class="stat-num" id="statDone">0</div><div class="stat-label">実施済み（FB完了）</div><div class="stat-sub" id="statDoneRate">—</div></div>
+        <div class="stat-card"><div class="stat-num" id="statFB">0</div><div class="stat-label">FB入力済み</div><div class="stat-sub">管理者からのFB</div></div>
+        <div class="stat-card"><div class="stat-num">3h</div><div class="stat-label">1回あたり時間</div><div class="stat-sub">月末月曜日（原則）</div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>年間進捗</span><span id="progressText">0 / 12 回</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+      </div>
+      <div class="overview-info-grid">
+        <div class="info-card">
+          <div class="info-card-title">📋 研修概要</div>
+          <div class="info-row"><span class="info-key">期間</span><span class="info-val">2026年6月〜2027年5月</span></div>
+          <div class="info-row"><span class="info-key">指導者</span><span class="info-val">中田真実（まみ）</span></div>
+          <div class="info-row"><span class="info-key">管理者</span><span class="info-val">江原健次・中田真実</span></div>
+          <div class="info-row"><span class="info-key">時間</span><span class="info-val">3時間 / 回</span></div>
+          <div class="info-row"><span class="info-key">開催</span><span class="info-val">月末月曜日（原則）</span></div>
+          <div class="info-row"><span class="info-key">契約</span><span class="info-val">12ヶ月パッケージ</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">🎯 研修の軸</div>
+          <div class="info-row"><span class="info-key">主軸</span><span class="info-val">ピラティス（ストレッチは補助）</span></div>
+          <div class="info-row"><span class="info-key">症例別</span><span class="info-val">4テーマ × 各3時間</span></div>
+          <div class="info-row"><span class="info-key">基礎</span><span class="info-val">6テーマ（ニュートラル〜モディフィ）</span></div>
+          <div class="info-row"><span class="info-key">方針</span><span class="info-val">下を持ち上げる・全員成長</span></div>
+          <div class="info-row"><span class="info-key">資料</span><span class="info-val">書き込み式（継続使用）</span></div>
+          <div class="info-row"><span class="info-key">解剖学</span><span class="info-val">エクサ過程で段階的導入</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">👥 受講者と特記事項</div>
+          <div class="info-row"><span class="info-key">舞波・ゆか</span><span class="info-val" style="color:#e09a2a">理解混乱中・発言を促す</span></div>
+          <div class="info-row"><span class="info-key">ゆうり</span><span class="info-val" style="color:#e05a5a">自信あり・怪我事例あり（肋骨）</span></div>
+          <div class="info-row"><span class="info-key">森原・ももか</span><span class="info-val">発言控えめ・他優先で対応</span></div>
+          <div class="info-row"><span class="info-key">運営方針</span><span class="info-val">質問で考えを汲み取る形式</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">⚠️ 現状の技術課題</div>
+          <div class="issue-pills">
+            <span class="issue-pill tech">ニュートラル誤認識</span>
+            <span class="issue-pill tech">デモができない</span>
+            <span class="issue-pill tech">タクタイル弱い</span>
+            <span class="issue-pill skill">キューイング抽象的</span>
+            <span class="issue-pill skill">動きの意図不理解</span>
+            <span class="issue-pill ops">心理的安全性の確保</span>
+            <span class="issue-pill ops">経験者の基礎不足</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="panel-schedule" class="panel">
+      <div class="section-title"><h2>📅 研修スケジュール・フィードバック</h2></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1a7a6e"></div>症例別</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1a4a7a"></div>基礎研修</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#7a4a1a"></div>エクサ応用</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#5c2a6e"></div>総括・見直し</div>
+      </div>
+      <div class="session-grid" id="sessionGrid"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_SESSIONS = [
+  {id:1,month:'2026年6月',type:'case',typeLabel:'症例別',title:'猫背（再実施）',tags:['前回資料使用','ニュートラル基礎','ディスカッション'],
+   content:['前回資料を使い猫背テーマを再実施','ニュートラルポジション・シーカーブの基礎確認','キューイング練習（バーバル）','ディスカッション：なぜ猫背になるか'],
+   structure:['① 観察・姿勢分析（30分）','② 猫背の原因解説（40分）','③ エクサ実技 + タクタイル（60分）','④ キューイング練習 + モディフィケーション（30分）','⑤ ディスカッション・まとめ（20分）']},
+  {id:2,month:'2026年7月',type:'base',typeLabel:'基礎研修①',title:'ニュートラルポジション',tags:['シーカーブ','インプリント','体の動員'],
+   content:['ニュートラルポジションの正確な定義と確認方法','シーカーブ・インプリントの違いと使い分け','腰椎骨盤の基礎理解（誤認識の修正）','自己実践でニュートラルを体感'],
+   structure:['① 理論解説（40分）','② ペア確認実技（50分）','③ エクサでの実践（60分）','④ ディスカッション（30分）']},
+  {id:3,month:'2026年8月',type:'case',typeLabel:'症例別',title:'巻き肩',tags:['観察・分析','エクサ選定','モディフィケーション'],
+   content:['巻き肩の観察ポイント・姿勢分析','肩甲骨・胸椎モビリティのエクサ選定','タクタイルの実践（肩甲骨周り）','モディフィケーションの考え方'],
+   structure:['① 観察・分析（30分）','② 解説（40分）','③ 実技（60分）','④ キューイング + モディフィ（30分）','⑤ まとめ（20分）']},
+  {id:4,month:'2026年9月',type:'base',typeLabel:'基礎研修②',title:'姿勢分析・観察力',tags:['姿勢分析','動きの観察','書き込み式資料'],
+   content:['姿勢分析の観察ポイント（前・後・側面）','アライメントチェックの手順','書き込み式資料を使った分析練習','観察→言語化の訓練'],
+   structure:['① 観察理論（40分）','② 書き込み実習（60分）','③ 実技・フィードバック（60分）','④ まとめ（20分）']},
+  {id:5,month:'2026年10月',type:'case',typeLabel:'症例別',title:'反り腰',tags:['骨盤・腰椎','タクタイル','ストレッチ応用'],
+   content:['反り腰の原因と骨盤・腰椎の関係','インプリントとニュートラルの実践','タクタイルで骨盤ニュートラルを誘導','必要なストレッチの選定と補助的活用'],
+   structure:['① 観察・分析（30分）','② 解説（40分）','③ 実技（60分）','④ キューイング + モディフィ（30分）','⑤ まとめ（20分）']},
+  {id:6,month:'2026年11月',type:'base',typeLabel:'基礎研修③',title:'動きの分析',tags:['解剖学（応用）','デモンストレーション','意図の理解'],
+   content:['各エクサにおける動きの意図を理解する','解剖学の段階的導入（エクサ文脈で）','デモンストレーション技術の向上','自己実践不足の解消プログラム'],
+   structure:['① 動きの意図解説（40分）','② 解剖学セッション（40分）','③ デモ実践（60分）','④ フィードバック（40分）']},
+  {id:7,month:'2026年12月',type:'case',typeLabel:'症例別',title:'ギブフレア',tags:['肋骨の動き','安全管理','キューイング'],
+   content:['ギブフレアの定義と観察ポイント','肋骨の動きと安全管理（怪我事例を踏まえた指導見直し）','キューイング：肋骨を落とすための言語化','タクタイルで誘導する実践'],
+   structure:['① 観察・分析（30分）','② 解説・安全管理（50分）','③ 実技（60分）','④ キューイング + ディスカッション（40分）']},
+  {id:8,month:'2027年1月',type:'base',typeLabel:'基礎研修④',title:'タクタイル',tags:['手の置き方','意図を持つ接触','ペア練習'],
+   content:['意図を持ったタクタイルとは何か','手の置き方・圧力・方向の基本','ペア練習：タクタイルのフィードバックをもらう','各部位別のタクタイル技術'],
+   structure:['① 理論解説（30分）','② デモ確認（30分）','③ ペア実践（90分）','④ フィードバック・まとめ（30分）']},
+  {id:9,month:'2027年2月',type:'base',typeLabel:'基礎研修⑤',title:'キューイング（バーバル）',tags:['具体的な言語化','否定しない表現','ロールプレイ'],
+   content:['抽象的なキューイングを具体化する','否定しない・肯定的な表現の練習','ロールプレイ：指導者・受講者の両役割を体験','各症例に合ったキューイング集の整理'],
+   structure:['① 良い・悪いキューイングの比較（40分）','② ロールプレイ（80分）','③ フィードバック・改善（40分）']},
+  {id:10,month:'2027年3月',type:'base',typeLabel:'基礎研修⑥',title:'モディフィケーション',tags:['難易度調整','プロップ活用','個別対応力'],
+   content:['各エクサのモディフィケーション選択肢を整理','プロップ（ブロック・バンド等）の効果的な活用','受講者レベル別の難易度調整技術','個別対応力を高める実践演習'],
+   structure:['① モディフィ理論（40分）','② プロップ活用実技（60分）','③ ケーススタディ演習（60分）','④ まとめ（20分）']},
+  {id:11,month:'2027年4月',type:'disc',typeLabel:'エクサ応用',title:'マシンワーク 応用',tags:['リフォーマー','エクサ深掘り','ディスカッション'],
+   content:['リフォーマーを使ったエクサの深掘り','各エクサの意図と活用場面の整理','マシン特有のモディフィケーション','グループディスカッション：活用事例の共有'],
+   structure:['① リフォーマー基礎確認（30分）','② エクサ深掘り実技（90分）','③ ディスカッション（60分）']},
+  {id:12,month:'2027年5月',type:'review',typeLabel:'総括・見直し',title:'新規養成内容の再構成',tags:['1年の振り返り','養成カリキュラム','次期計画'],
+   content:['12ヶ月の研修を振り返り・成長の確認','養成カリキュラムの再構成案の検討','次年度の研修計画の方向性を共有','指導者・管理者・受講者 全体でのまとめ'],
+   structure:['① 振り返り・成長確認（60分）','② 養成内容の見直しワーク（60分）','③ 次期計画ディスカッション（60分）']},
+];
+
+let currentRole = null;
+let feedbacks      = JSON.parse(localStorage.getItem('zero_fb')       || '{}');
+let customSessions = JSON.parse(localStorage.getItem('zero_sessions') || '{}');
+
+function getSessions() {
+  return DEFAULT_SESSIONS.map(s => {
+    const c = customSessions[s.id];
+    return c ? {...s, content: c.content||s.content, structure: c.structure||s.structure} : s;
+  });
+}
+function saveFB()  { localStorage.setItem('zero_fb',       JSON.stringify(feedbacks)); }
+function saveCS()  { localStorage.setItem('zero_sessions', JSON.stringify(customSessions)); }
+
+const isAdmin = () => currentRole === 'ehara' || currentRole === 'mami';
+const canFB   = () => currentRole === 'mami' || currentRole === 'ehara';
+
+let pendingRole = null;
+function selectAdmin(role) {
+  pendingRole = role;
+  const names = {ehara:'江原健次', mami:'中田真実（まみ）'};
+  document.getElementById('pwLabel').textContent = names[role] + ' のパスワード';
+  document.getElementById('adminBtns').style.display = 'none';
+  document.getElementById('pwArea').style.display = 'block';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  setTimeout(() => document.getElementById('pwInput').focus(), 50);
+}
+function doAdminLogin() {
+  if (document.getElementById('pwInput').value === 'zerop') {
+    document.getElementById('pwError').style.display = 'none';
+    login(pendingRole);
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+function cancelAdmin() {
+  pendingRole = null;
+  document.getElementById('pwArea').style.display = 'none';
+  document.getElementById('adminBtns').style.display = 'block';
+}
+
+/* LOGIN */
+function login(role) {
+  currentRole = role;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  const names      = {ehara:'江原健次', mami:'中田真実（まみ）', trainee:'受講者'};
+  const badgeTxts  = {ehara:'管理者',   mami:'管理者',   trainee:'受講者'};
+  document.getElementById('topbarUser').textContent = names[role];
+  const b = document.getElementById('roleBadge');
+  b.className = `role-badge ${role}`;
+  b.textContent = badgeTxts[role];
+  renderSessions(); updateStats();
+}
+function logout() {
+  currentRole = null;
+  pendingRole = null;
+  document.getElementById('pwArea').style.display = 'none';
+  document.getElementById('adminBtns').style.display = 'block';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===0));
+}
+
+/* TABS */
+function switchTab(e, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+
+/* STATS */
+function updateStats() {
+  const n = Object.keys(feedbacks).length;
+  document.getElementById('statDone').textContent = n;
+  document.getElementById('statDoneRate').textContent = n ? `${Math.round(n/12*100)}%完了` : '—';
+  document.getElementById('statFB').textContent = n;
+  document.getElementById('progressText').textContent = `${n} / 12 回`;
+  document.getElementById('progressBar').style.width = `${(n/12)*100}%`;
+}
+
+/* SESSIONS */
+function renderSessions() {
+  const grid = document.getElementById('sessionGrid');
+  grid.innerHTML = '';
+  getSessions().forEach(s => {
+    const fb = feedbacks[s.id];
+    const stTxt = fb ? 'FB入力済み' : (s.id===1 ? '次回実施' : '未実施');
+    const stCls = fb ? 'done' : (s.id===1 ? 'pending' : 'upcoming');
+    const card = document.createElement('div');
+    card.className = `session-card type-${s.type}`;
+    card.id = `card-${s.id}`;
+    card.innerHTML = `
+      <div class="session-card-header" onclick="toggleCard(${s.id})">
+        <div class="session-num-bar">
+          <div class="snum">${String(s.id).padStart(2,'0')}</div>
+          <div class="slabel">SESSION</div>
+        </div>
+        <div class="session-info">
+          <div class="session-meta">
+            <span class="session-date">📅 ${s.month}</span>
+            <span class="session-type-tag">${s.typeLabel}</span>
+          </div>
+          <div class="session-title">${s.title}</div>
+          <div class="session-tags">${s.tags.map(t=>`<span class="stag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="session-right">
+          <span class="fb-status ${stCls}">${stTxt}</span>
+          <span class="expand-icon">▾</span>
+        </div>
+      </div>
+      <div class="session-detail">
+        <div class="detail-grid">
+          <div class="detail-box" id="box-content-${s.id}"></div>
+          <div class="detail-box" id="box-structure-${s.id}"></div>
+        </div>
+        <div class="fb-section">
+          <div class="fb-section-title">
+            💬 研修後フィードバック
+            <span class="fb-badge">管理者（江原 / まみ）</span>
+          </div>
+          <div id="fb-display-${s.id}"></div>
+          <div id="fb-form-${s.id}"></div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+    renderBox(s.id, 'content');
+    renderBox(s.id, 'structure');
+    renderFBArea(s.id);
+  });
+}
+
+function toggleCard(id) { document.getElementById(`card-${id}`).classList.toggle('open'); }
+
+/* CONTENT BOX */
+function renderBox(sid, field) {
+  const s = getSessions().find(x=>x.id===sid);
+  const items = s[field];
+  const label = field==='content' ? '研修内容' : '時間構成（3時間）';
+  const el = document.getElementById(`box-${field}-${sid}`);
+  el.innerHTML = `
+    <div class="detail-box-header">
+      <div class="detail-box-title">${label}</div>
+      ${isAdmin() ? `<button class="btn-edit-content" onclick="startEdit(${sid},'${field}')">✏️ 編集</button>` : ''}
+    </div>
+    <ul class="detail-list">${items.map(c=>`<li>${c}</li>`).join('')}</ul>`;
+}
+
+function startEdit(sid, field) {
+  const s = getSessions().find(x=>x.id===sid);
+  const items = s[field];
+  const label = field==='content' ? '研修内容' : '時間構成（3時間）';
+  const el = document.getElementById(`box-${field}-${sid}`);
+  el.innerHTML = `
+    <div class="detail-box-header"><div class="detail-box-title">${label}を編集</div></div>
+    <div class="edit-area" id="ea-${field}-${sid}">
+      ${items.map((v,i)=>`
+        <div class="edit-item" id="ei-${field}-${sid}-${i}">
+          <textarea rows="2">${v}</textarea>
+          <button class="btn-remove" onclick="removeItem('${field}',${sid},${i})">×</button>
+        </div>`).join('')}
+    </div>
+    <button class="btn-add" onclick="addItem('${field}',${sid})">＋ 項目を追加</button>
+    <div class="edit-actions">
+      <button class="btn-cancel-main" onclick="renderBox(${sid},'${field}')">キャンセル</button>
+      <button class="btn-save-main"   onclick="saveEdit(${sid},'${field}')">💾 保存</button>
+    </div>`;
+}
+
+function addItem(field, sid) {
+  const area = document.getElementById(`ea-${field}-${sid}`);
+  const i = area.children.length;
+  const div = document.createElement('div');
+  div.className = 'edit-item'; div.id = `ei-${field}-${sid}-${i}`;
+  div.innerHTML = `<textarea rows="2" placeholder="項目を入力"></textarea><button class="btn-remove" onclick="removeItem('${field}',${sid},${i})">×</button>`;
+  area.appendChild(div);
+}
+
+function removeItem(field, sid, i) {
+  const el = document.getElementById(`ei-${field}-${sid}-${i}`);
+  if (el) el.remove();
+}
+
+function saveEdit(sid, field) {
+  const area = document.getElementById(`ea-${field}-${sid}`);
+  const items = Array.from(area.querySelectorAll('textarea')).map(t=>t.value.trim()).filter(v=>v);
+  if (!items.length) { showToast('⚠️ 最低1項目必要です'); return; }
+  if (!customSessions[sid]) customSessions[sid] = {};
+  customSessions[sid][field] = items;
+  saveCS();
+  renderBox(sid, field);
+  showToast('✅ 保存しました');
+}
+
+/* FB */
+function renderFBArea(sid) {
+  const fb = feedbacks[sid];
+  const dEl = document.getElementById(`fb-display-${sid}`);
+  const fEl = document.getElementById(`fb-form-${sid}`);
+  if (fb) {
+    dEl.innerHTML = `
+      <div class="fb-display">
+        <div class="fb-display-header">
+          <span class="fb-display-who">中田真実（まみ）</span>
+          <span class="fb-display-date">${fb.date}</span>
+        </div>
+        <div class="fb-field-label">📝 全体の様子・気づき</div>
+        <div class="fb-field-value">${fb.overall||'—'}</div>
+        <div class="fb-field-label">✅ 良かった点</div>
+        <div class="fb-field-value">${fb.good||'—'}</div>
+        <div class="fb-field-label">🔧 改善・次回に向けて</div>
+        <div class="fb-field-value">${fb.improve||'—'}</div>
+        ${fb.memo ? `<div class="fb-field-label">📌 個別メモ</div><div class="fb-field-value">${fb.memo}</div>` : ''}
+      </div>`;
+    fEl.innerHTML = canFB() ? `<div class="fb-actions"><button class="btn-cancel-main" onclick="openFBForm(${sid},true)">✏️ 編集する</button></div>` : '';
+  } else {
+    dEl.innerHTML = `<p style="font-size:13px;color:var(--text-light);margin-bottom:12px;">まだFBが入力されていません。</p>`;
+    fEl.innerHTML = canFB() ? fbFormHTML(sid) : '';
+  }
+}
+
+function fbFormHTML(sid, editing=false) {
+  const fb = feedbacks[sid]||{};
+  return `<div class="fb-form">
+    <div><label>📝 全体の様子・気づき</label>
+      <textarea id="fbo-${sid}" placeholder="参加者の反応、全体の雰囲気、気づいた点など">${fb.overall||''}</textarea></div>
+    <div><label>✅ 良かった点</label>
+      <textarea id="fbg-${sid}" placeholder="できていたこと、成長が見られた点">${fb.good||''}</textarea></div>
+    <div><label>🔧 改善・次回に向けて</label>
+      <textarea id="fbi-${sid}" placeholder="次回取り組む課題、改善したい点">${fb.improve||''}</textarea></div>
+    <div><label>📌 個別メモ（任意）</label>
+      <textarea id="fbm-${sid}" placeholder="特定の受講者への所見など" rows="2">${fb.memo||''}</textarea></div>
+    <div class="fb-actions">
+      ${editing?`<button class="btn-cancel-main" onclick="renderFBArea(${sid})">キャンセル</button>`:''}
+      <button class="btn-save-main" onclick="saveFBData(${sid})">💾 保存する</button>
+    </div></div>`;
+}
+
+function openFBForm(sid, editing=false) {
+  document.getElementById(`fb-form-${sid}`).innerHTML = fbFormHTML(sid, editing);
+}
+
+function saveFBData(sid) {
+  const o = document.getElementById(`fbo-${sid}`).value.trim();
+  const g = document.getElementById(`fbg-${sid}`).value.trim();
+  const i = document.getElementById(`fbi-${sid}`).value.trim();
+  const m = document.getElementById(`fbm-${sid}`).value.trim();
+  if (!o&&!g&&!i) { showToast('⚠️ 少なくとも1つ入力してください'); return; }
+  const now = new Date();
+  const d = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  feedbacks[sid] = {overall:o, good:g, improve:i, memo:m, date:d};
+  saveFB();
+  const s = document.getElementById(`card-${sid}`).querySelector('.fb-status');
+  s.className='fb-status done'; s.textContent='FB入力済み';
+  renderFBArea(sid); updateStats();
+  showToast('✅ フィードバックを保存しました');
+}
+
+/* TOAST */
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
