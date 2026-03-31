@@ -207,10 +207,25 @@ body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--t
       </div>
     </div>
     <div class="login-section-label">── 受講者 ──</div>
-    <button class="login-btn trainee" onclick="login('trainee')">
-      <span>👤 受講者としてログイン</span>
-      <span class="btn-right">閲覧のみ</span>
-    </button>
+    <div id="traineeBtnWrap">
+      <button class="login-btn trainee" onclick="selectTrainee()">
+        <span>👤 受講者としてログイン</span>
+        <span class="btn-right">閲覧のみ</span>
+      </button>
+    </div>
+    <div id="traineePwArea" style="display:none;margin-top:4px;">
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;letter-spacing:1px;">受講者 パスワード</div>
+      <div>
+        <input type="password" id="traineePwInput" placeholder="パスワードを入力"
+          style="width:100%;padding:13px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:white;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;letter-spacing:2px;"
+          onkeydown="if(event.key==='Enter')doTraineeLogin()">
+      </div>
+      <div id="traineePwError" style="color:#e07070;font-size:12px;margin-top:6px;display:none;">パスワードが正しくありません</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="cancelTrainee()" style="flex:1;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-family:'Noto Sans JP',sans-serif;font-size:13px;cursor:pointer;">戻る</button>
+        <button onclick="doTraineeLogin()" style="flex:2;padding:12px;border-radius:8px;border:none;background:rgba(255,255,255,.12);color:white;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">ログイン</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -261,25 +276,8 @@ body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--t
           <div class="info-row"><span class="info-key">資料</span><span class="info-val">書き込み式（継続使用）</span></div>
           <div class="info-row"><span class="info-key">解剖学</span><span class="info-val">エクサ過程で段階的導入</span></div>
         </div>
-        <div class="info-card">
-          <div class="info-card-title">👥 受講者と特記事項</div>
-          <div class="info-row"><span class="info-key">舞波・ゆか</span><span class="info-val" style="color:#e09a2a">理解混乱中・発言を促す</span></div>
-          <div class="info-row"><span class="info-key">ゆうり</span><span class="info-val" style="color:#e05a5a">自信あり・怪我事例あり（肋骨）</span></div>
-          <div class="info-row"><span class="info-key">森原・ももか</span><span class="info-val">発言控えめ・他優先で対応</span></div>
-          <div class="info-row"><span class="info-key">運営方針</span><span class="info-val">質問で考えを汲み取る形式</span></div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-title">⚠️ 現状の技術課題</div>
-          <div class="issue-pills">
-            <span class="issue-pill tech">ニュートラル誤認識</span>
-            <span class="issue-pill tech">デモができない</span>
-            <span class="issue-pill tech">タクタイル弱い</span>
-            <span class="issue-pill skill">キューイング抽象的</span>
-            <span class="issue-pill skill">動きの意図不理解</span>
-            <span class="issue-pill ops">心理的安全性の確保</span>
-            <span class="issue-pill ops">経験者の基礎不足</span>
-          </div>
-        </div>
+
+
       </div>
     </div>
 
@@ -377,10 +375,34 @@ function doAdminLogin() {
     document.getElementById('pwInput').focus();
   }
 }
+function selectTrainee() {
+  document.getElementById('traineeBtnWrap').style.display = 'none';
+  document.getElementById('traineePwArea').style.display = 'block';
+  document.getElementById('traineePwInput').value = '';
+  document.getElementById('traineePwError').style.display = 'none';
+  setTimeout(() => document.getElementById('traineePwInput').focus(), 50);
+}
+function doTraineeLogin() {
+  if (document.getElementById('traineePwInput').value === 'zerop') {
+    document.getElementById('traineePwError').style.display = 'none';
+    login('trainee');
+  } else {
+    document.getElementById('traineePwError').style.display = 'block';
+    document.getElementById('traineePwInput').value = '';
+    document.getElementById('traineePwInput').focus();
+  }
+}
+function cancelTrainee() {
+  document.getElementById('traineePwArea').style.display = 'none';
+  document.getElementById('traineeBtnWrap').style.display = 'block';
+}
+
 function cancelAdmin() {
   pendingRole = null;
   document.getElementById('pwArea').style.display = 'none';
   document.getElementById('adminBtns').style.display = 'block';
+  document.getElementById('traineePwArea').style.display = 'none';
+  document.getElementById('traineeBtnWrap').style.display = 'block';
 }
 
 /* LOGIN */
