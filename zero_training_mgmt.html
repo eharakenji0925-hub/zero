@@ -208,14 +208,14 @@ body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--t
 .modal-field label{font-size:12px;font-weight:700;color:var(--text-mid);display:block;margin-bottom:6px;}
 .modal-field input[type="text"]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
 .modal-field input[type="text"]:focus{border-color:var(--teal);}
-.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream);}
-.drop-zone.drag-over{border-color:var(--teal);background:var(--case-bg);}
-.drop-zone-label{font-size:13px;color:var(--text-light);margin-top:8px;}
-.drop-zone-icon{font-size:32px;margin-bottom:6px;}
-.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;}
-.preview-item{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:1;}
-.preview-item img{width:100%;height:100%;object-fit:cover;}
-.preview-item .remove-preview{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+
+
+
+
+
+
+
+
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
 .empty-state{text-align:center;padding:48px;color:var(--text-light);}
 .empty-state-icon{font-size:48px;margin-bottom:12px;}
@@ -299,6 +299,7 @@ body{background:var(--cream);font-family:'Noto Sans JP',sans-serif;color:var(--t
     <button class="tab-btn active" onclick="switchTab(event,'overview')">📊 概要</button>
     <button class="tab-btn" onclick="switchTab(event,'schedule')">📅 研修スケジュール・FB</button>
     <button class="tab-btn" onclick="switchTab(event,'manual')">📖 マニュアル</button>
+    <button class="tab-btn admin-guide-tab" onclick="switchTab(event,'guide')" style="display:none">📋 使い方</button>
   </div>
   <div class="content">
 
@@ -459,6 +460,7 @@ function doTraineeLogin() {
 function cancelTrainee() {
   document.getElementById('traineePwArea').style.display = 'none';
   document.getElementById('traineeBtnWrap').style.display = 'block';
+  document.querySelectorAll('.admin-guide-tab').forEach(el => el.style.display = 'none');
 }
 
 function cancelAdmin() {
@@ -481,6 +483,10 @@ function login(role) {
   b.className = `role-badge ${role}`;
   b.textContent = badgeTxts[role];
   renderSessions(); updateStats();
+  // Show guide tab for admins only
+  document.querySelectorAll('.admin-guide-tab').forEach(el => {
+    el.style.display = (role === 'ehara' || role === 'mami') ? '' : 'none';
+  });
 }
 function logout() {
   currentRole = null;
@@ -692,7 +698,6 @@ function saveFBData(sid) {
 
 // ════ MANUAL ════
 let manuals = JSON.parse(localStorage.getItem('zero_manuals') || '[]');
-let pendingPages = [];
 let editingManualId = null;
 
 function saveManualsStore() { localStorage.setItem('zero_manuals', JSON.stringify(manuals)); }
@@ -718,9 +723,9 @@ function renderManualPanel() {
       </div>`;
     return;
   }
-  let cards = manuals.map(m => {
-    const thumbHTML = m.pages && m.pages.length > 0
-      ? `<div class="manual-card-thumb"><img src="${m.pages[0]}" alt="thumb"></div>`
+  const cards = manuals.map(m => {
+    const thumb = m.pages && m.pages.length > 0
+      ? `<div class="manual-card-thumb"><img src="${m.pages[0]}" alt="thumb" onerror="this.parentElement.innerHTML='<div style='width:100%;height:160px;display:flex;align-items:center;justify-content:center;font-size:40px;background:#eee'>📄</div>'"></div>`
       : `<div class="manual-card-thumb no-img">📄</div>`;
     const adminBtns = isAdmin() ? `
       <div class="manual-card-actions">
@@ -730,7 +735,7 @@ function renderManualPanel() {
       </div>` : '';
     return `
       <div class="manual-card" onclick="openViewer('${m.id}')">
-        ${thumbHTML}
+        ${thumb}
         <div class="manual-card-body">
           <div class="manual-card-name">${m.name}</div>
           <div class="manual-card-meta">${m.pages ? m.pages.length : 0}ページ　${m.createdAt||''}</div>
@@ -741,6 +746,7 @@ function renderManualPanel() {
   viewArea.innerHTML = `<div class="manual-grid">${cards}</div>`;
 }
 
+/* VIEWER */
 function openViewer(id) {
   const m = manuals.find(x => x.id === id);
   if (!m || !m.pages || !m.pages.length) { showToast('ページがありません'); return; }
@@ -758,74 +764,87 @@ function closeViewer() {
   document.body.style.overflow = '';
 }
 
+/* MODAL */
 function openModal(editId = null) {
   editingManualId = editId;
-  pendingPages = [];
-  document.getElementById('previewGrid').innerHTML = '';
   if (editId) {
     const m = manuals.find(x => x.id === editId);
     document.getElementById('modalTitle').textContent = 'マニュアルを編集';
     document.getElementById('manualNameInput').value = m.name;
-    pendingPages = [...(m.pages || [])];
-    renderPreviews();
+    document.getElementById('manualBaseUrl').value = m.baseUrl || '';
+    document.getElementById('manualPrefix').value = m.prefix || '';
+    document.getElementById('manualPageCount').value = m.pages ? m.pages.length : '';
+    document.getElementById('manualExt').value = m.ext || '.jpg';
   } else {
     document.getElementById('modalTitle').textContent = 'マニュアルを追加';
     document.getElementById('manualNameInput').value = '';
+    document.getElementById('manualBaseUrl').value = 'https://raw.githubusercontent.com/eharakenji0925-hub/zero/main/manual_images/';
+    document.getElementById('manualPrefix').value = '';
+    document.getElementById('manualPageCount').value = '';
+    document.getElementById('manualExt').value = '.jpg';
   }
+  updateUrlPreview();
+  // Live preview
+  ['manualBaseUrl','manualPrefix','manualPageCount','manualExt'].forEach(id => {
+    document.getElementById(id).oninput = updateUrlPreview;
+  });
   document.getElementById('uploadModal').classList.add('open');
 }
 function closeModal() {
   document.getElementById('uploadModal').classList.remove('open');
-  pendingPages = [];
   editingManualId = null;
 }
 
-function handleFiles(files) {
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => { pendingPages.push(e.target.result); renderPreviews(); };
-    reader.readAsDataURL(file);
-  });
-}
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.remove('drag-over');
-  handleFiles(e.dataTransfer.files);
-}
-function renderPreviews() {
-  document.getElementById('previewGrid').innerHTML = pendingPages.map((p, i) => `
-    <div class="preview-item">
-      <img src="${p}" alt="p${i+1}">
-      <button class="remove-preview" onclick="removePage(${i})">×</button>
-    </div>`).join('');
-}
-function removePage(i) {
-  pendingPages.splice(i, 1);
-  renderPreviews();
+function updateUrlPreview() {
+  const base   = document.getElementById('manualBaseUrl').value.trim();
+  const prefix = document.getElementById('manualPrefix').value.trim();
+  const count  = parseInt(document.getElementById('manualPageCount').value) || 0;
+  const ext    = document.getElementById('manualExt').value.trim() || '.jpg';
+  const el     = document.getElementById('urlPreview');
+  if (!base || !prefix || !count) { el.textContent = '—'; return; }
+  const examples = [];
+  for (let i = 1; i <= Math.min(count, 3); i++) {
+    examples.push(base + prefix + String(i).padStart(2,'0') + ext);
+  }
+  if (count > 3) examples.push('…');
+  el.innerHTML = examples.map(u => `<div>${u}</div>`).join('');
 }
 
+function buildPages(base, prefix, count, ext) {
+  const pages = [];
+  for (let i = 1; i <= count; i++) {
+    pages.push(base + prefix + String(i).padStart(2,'0') + ext);
+  }
+  return pages;
+}
+
+/* SAVE */
 function saveManual() {
-  const name = document.getElementById('manualNameInput').value.trim();
-  if (!name) { showToast('⚠️ マニュアル名を入力してください'); return; }
-  if (!pendingPages.length) { showToast('⚠️ 画像を1枚以上追加してください'); return; }
+  const name   = document.getElementById('manualNameInput').value.trim();
+  const base   = document.getElementById('manualBaseUrl').value.trim();
+  const prefix = document.getElementById('manualPrefix').value.trim();
+  const count  = parseInt(document.getElementById('manualPageCount').value) || 0;
+  const ext    = document.getElementById('manualExt').value.trim() || '.jpg';
+  if (!name)   { showToast('⚠️ マニュアル名を入力してください'); return; }
+  if (!base)   { showToast('⚠️ ベースURLを入力してください'); return; }
+  if (!prefix) { showToast('⚠️ ファイル名プレフィックスを入力してください'); return; }
+  if (!count)  { showToast('⚠️ ページ数を入力してください'); return; }
+  const pages = buildPages(base, prefix, count, ext);
   const now = new Date();
   const dateStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}`;
   if (editingManualId) {
     const idx = manuals.findIndex(x => x.id === editingManualId);
-    if (idx >= 0) manuals[idx] = {...manuals[idx], name, pages: pendingPages, updatedAt: dateStr};
+    if (idx >= 0) manuals[idx] = { ...manuals[idx], name, baseUrl: base, prefix, ext, pages, updatedAt: dateStr };
   } else {
-    manuals.push({ id: 'm_' + Date.now(), name, pages: pendingPages, createdAt: dateStr });
+    manuals.push({ id: 'm_' + Date.now(), name, baseUrl: base, prefix, ext, pages, createdAt: dateStr });
   }
-  try {
-    saveManualsStore();
-    closeModal();
-    renderManualPanel();
-    showToast('✅ マニュアルを保存しました');
-  } catch(e) {
-    showToast('⚠️ 容量不足です。画像を減らすか圧縮してください');
-  }
+  saveManualsStore();
+  closeModal();
+  renderManualPanel();
+  showToast('✅ マニュアルを保存しました');
 }
 
+/* DELETE */
 function deleteManual(id) {
   if (!confirm('このマニュアルを削除しますか？')) return;
   manuals = manuals.filter(x => x.id !== id);
@@ -863,19 +882,31 @@ function showToast(msg) {
       <input type="text" id="manualNameInput" placeholder="例: Spine Corrector">
     </div>
     <div class="modal-field">
-      <label>ページ画像をアップロード（複数可・順番に並びます）</label>
-      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" 
-           ondragover="event.preventDefault();this.classList.add('drag-over')"
-           ondragleave="this.classList.remove('drag-over')"
-           ondrop="handleDrop(event)">
-        <div class="drop-zone-icon">📄</div>
-        <div>クリックまたはドラッグ&ドロップ</div>
-        <div class="drop-zone-label">JPG・PNG対応</div>
-      </div>
-      <input type="file" id="fileInput" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
-      <div class="preview-grid" id="previewGrid"></div>
+      <label>GitHubベースURL *</label>
+      <input type="text" id="manualBaseUrl" placeholder="https://raw.githubusercontent.com/eharakenji0925-hub/zero/main/manual_images/">
+      <div style="font-size:11px;color:var(--text-light);margin-top:4px;">末尾のスラッシュまで入力</div>
     </div>
-    <div class="modal-actions">
+    <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:10px;">
+      <div class="modal-field">
+        <label>ファイル名プレフィックス *</label>
+        <input type="text" id="manualPrefix" placeholder="例: spine_">
+      </div>
+      <div class="modal-field">
+        <label>ページ数 *</label>
+        <input type="number" id="manualPageCount" placeholder="13" min="1" max="99"
+          style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;">
+      </div>
+      <div class="modal-field">
+        <label>拡張子</label>
+        <input type="text" id="manualExt" placeholder=".jpg" value=".jpg"
+          style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;outline:none;">
+      </div>
+    </div>
+    <div style="background:var(--cream);border-radius:8px;padding:12px;margin-top:4px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-light);margin-bottom:6px;">生成されるURL（例）</div>
+      <div id="urlPreview" style="font-size:11px;color:var(--text-mid);word-break:break-all;line-height:1.8;"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
       <button class="btn-cancel-main" onclick="closeModal()">キャンセル</button>
       <button class="btn-save-main" onclick="saveManual()">💾 保存する</button>
     </div>
